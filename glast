@@ -1,0 +1,103 @@
+#!/bin/bash
+branch_name=$(git symbolic-ref -q HEAD)
+branch_name=${branch_name##refs/heads/}
+branch_name=${branch_name:-HEAD}
+
+echo "[ENG] Current branch is: "$branch_name
+echo "[SPA] Actual rama es: "$branch_name
+echo ""
+echo "[ENG] Are you sure to continue? (Y = yes)"
+echo "[SPA] Estás seguro de continuar? (S = si)"
+read -p "" -n 1 -r
+echo ""   # (optional) move to a new line
+
+if [[ ! $REPLY =~ ^([yY]|[sS])+$ ]]
+then
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
+fi
+
+echo "[LOG]"
+git add -A
+git add .
+git commit -am "$1"
+echo "[!LOG]"
+echo ""
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ $current_branch != "master" ]
+then
+	echo "[LOG]"
+	git checkout master
+	echo "[!LOG]"
+	echo ""
+	echo "[ENG] Changed to branch master"
+	echo "[SPA] Cambiando a la rama master"
+	echo ""
+fi
+echo "[ENG] Pull from origin to master"
+echo "[SPA] Obteniendo del origen al master"
+echo ""
+echo "[LOG]"
+git pull origin master
+echo "[!LOG]"
+echo ""
+
+echo "[ENG] Changed to current branch"
+echo "[SPA] Cambiando la rama actual"
+echo ""
+echo "[LOG]"
+git checkout $branch_name
+echo "[!LOG]"
+echo ""
+
+echo "[ENG] Fetch master"
+echo "[SPA] Buscando master"
+echo ""
+echo "[LOG]"
+git fetch
+echo "[!LOG]"
+echo ""
+
+echo "[ENG] Initialized rebase"
+echo "[SPA] Rebase inicializado"
+echo ""
+echo "[LOG]"
+git rebase master
+echo "[!LOG]"
+echo ""
+
+echo "[ENG] Changed to branch master"
+echo "[SPA] Cambiando a la rama master"
+echo ""
+echo "[LOG]"
+git checkout master
+git push origin $branch_name -f
+echo "[!LOG]"
+echo ""
+
+last_current_branch="$(git rev-parse --abbrev-ref HEAD)"
+echo "[ENG] Current branch" $last_current_branch
+echo "[SPA] Rama Actual" $last_current_branch
+if [ $last_current_branch != $branch_name ]
+then
+	echo "[LOG]"
+	git checkout $last_branch_name
+	echo "[!LOG]"
+	echo ""
+	echo "[ENG] Changed to branch $last_branch_name"
+	echo "[SPA] Cambiando a la rama $last_branch_name"
+	echo ""
+fi
+echo "[LOG]"
+message="$(git log -1 --pretty=%B --oneline)"
+echo $message
+url="$(HUB_VERBOSE=1 hub pull-request -b master -h $1 -m $message)"
+echo $url
+git checkout master
+hub merge $url
+git push origin	master
+git checkout $branch_name
+echo "[!LOG]"
+echo ""
+
+echo "~~~~~~~~~~~~~~~~~~~~~~~~[FINISHED]~~~~~~~~~~~~~~~~~~~~~~~~~"
