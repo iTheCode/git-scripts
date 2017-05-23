@@ -91,7 +91,7 @@ fi
 echo "[LOG]"
 message="$(git log -1 --pretty=%B --oneline)"
 echo $message
-url="$(HUB_VERBOSE=1 hub pull-request -b master -h $1 -m $message)"
+url="$(hub pull-request -b master -h $branch_name -m $message)"
 echo $url
 git checkout master
 hub merge $url
